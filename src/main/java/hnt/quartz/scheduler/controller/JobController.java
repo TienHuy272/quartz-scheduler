@@ -16,9 +16,11 @@ public class JobController {
     private JobSchedulerService jobSchedulerService;
 
     @PostMapping("/schedule")
-    public String scheduleJob(@RequestParam String jobName, @RequestParam String cronExpression) {
+    public String scheduleJob(@RequestParam String jobName,
+                              @RequestParam String jobGroupName,
+                              @RequestParam String cronExpression) {
         try {
-            jobSchedulerService.scheduleJob(jobName, cronExpression);
+            jobSchedulerService.scheduleJob(jobName, jobGroupName, cronExpression);
             return "Job scheduled successfully.";
         } catch (SchedulerException e) {
             return "Error scheduling job: " + e.getMessage();

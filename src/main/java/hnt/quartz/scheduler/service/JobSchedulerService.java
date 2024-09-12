@@ -23,32 +23,23 @@ public class JobSchedulerService {
     @Autowired
     private ApplicationContext context;
 
-    private final String GROUP_NAME = "simple-group";
-    private final String CLASS_NAME = "simple-class";
+    public void scheduleJob(String jobName, String jobGroup, String cronExpression) throws SchedulerException {
+        JobDetail jobDetail = JobBuilder.newJob(ExecutionJob.class)
+                .withIdentity(jobName, jobGroup)
+                .storeDurably()
+                .build();
 
+        Trigger trigger = TriggerBuilder.newTrigger()
+                .forJob(jobDetail)
+                .withIdentity(jobName + "Trigger", jobGroup)
+                .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
+                .build();
 
-    public void scheduleJob(String jobName, String cronExpression) throws SchedulerException {
-        try {
-
-            JobDetail jobDetail = jobConfiguration.createJob(
-                    (Class<? extends QuartzJobBean>) Class.forName(ExecutionJob.class.getName()), false, context,
-                    jobName, GROUP_NAME);
-
-            if (scheduler.checkExists(jobDetail.getKey())) {
-                log.warn("Job {} already exists", jobName);
-                return;
-            }
-            Trigger trigger = jobConfiguration
-                    .createCronTrigger(jobName, new Date(),cronExpression, SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW);
-            scheduler.scheduleJob(jobDetail, trigger);
-            log.info("Job has been scheduled {}", jobName);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (SchedulerException e) {
-            log.error(e.getMessage(), e);
-        } catch (Exception e) {
-            log.error(e.getMessage());
+        if (scheduler.checkExists(jobDetail.getKey())) {
+            throw new SchedulerException("job already exists");
         }
+
+        scheduler.scheduleJob(jobDetail, trigger);
     }
 
 }
